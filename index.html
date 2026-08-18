@@ -982,4 +982,84 @@ document.querySelector('#generate').onclick=generate;
     const note=document.createElement('span');note.className='data-note tiny';note.textContent='地点推荐分为“内置精选”和“待地图核验”；未接入正式 API 前，不会把模板内容标成实时全网数据。';update.prepend(note);
   }
 })();
+</script><style>
+.route-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.route-overview{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:10px 0}.route-overview span,.cost-ledger span{padding:7px 8px;border-radius:8px;background:#f2f8f5;color:#315d50;font-size:11px}.cost-ledger{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin:9px 0}.cost-ledger span b{display:block;color:#0b6c52;font-size:12px}.food-plan{margin-top:7px;padding:8px 10px;border:1px solid #d7e9df;border-radius:8px;background:#fbfefc;font-size:12px}.plan-total{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.plan-total .tag{padding:6px 9px}.source-warning{margin-top:8px;color:#6a756f;font-size:11px}
+@media(max-width:700px){.route-overview,.cost-ledger{grid-template-columns:1fr 1fr}.route-overview span:last-child,.cost-ledger span:last-child{grid-column:1/-1}.route-actions .primary,.route-actions .smallbtn{flex:1}}
+</style><script>
+/* 统一规划引擎：所有行政区使用同一套数据规范、三路线生成和最终费用账本。 */
+(function installUnifiedPlanner(){
+  const foodByRegion={
+    '杭州':['片儿川或小笼','龙井虾仁与杭帮菜','定胜糕或藕粉'],
+    '天津':['煎饼果子或锅巴菜','津菜与八珍豆腐','麻花或熟梨糕'],
+    '阿坝':['青稞饼与酥油茶','牦牛肉汤锅','藏式酸奶'],
+    '普洱':['米干或豆汤米线','茶香鸡与佤味菜','普洱咖啡或茶点'],
+    '成都':['担担面或抄手','川菜或火锅','冰粉'],
+    '西安':['肉夹馍或胡辣汤','葫芦鸡与陕菜','甑糕'],
+    '洛阳':['牛肉汤','洛阳水席','牡丹饼']
+  };
+  const safeText=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+  function regionFoods(name){const key=Object.keys(foodByRegion).find(item=>name.includes(item));return foodByRegion[key]||['当地早餐与时令小吃','当地口碑正餐','地方茶饮或特色点心']}
+  function normalizedPack(){
+    const name=$('#city').value.trim()||'杭州',pack=c();
+    if(!Array.isArray(pack.themes)||!pack.themes.length)pack.themes=['自然风貌','在地文化','地方饮食','轻松漫游'];
+    if(!Array.isArray(pack.spots)||!pack.spots.length)pack.spots=[];
+    const seeds=['官方文旅重点景区','代表性自然景观','历史文化地标','特色村镇或街区','当地非遗体验','周边休闲目的地'];
+    while(pack.spots.length<6){const index=pack.spots.length,label=name+seeds[index%seeds.length];pack.spots.push([label,name+'及周边','以官方信息为准',['上午','下午','傍晚'][index%3],'通过当地文旅部门和地图平台核验后安排'])}
+    pack.spots=pack.spots.map((spot,index)=>Array.isArray(spot)?[spot[0]||name+seeds[index%6],spot[1]||name,spot[2]||'以官方信息为准',spot[3]||'出发前核验',spot[4]||'当地代表性体验，需在地图核验']: [String(spot),name,'以官方信息为准','出发前核验','当地代表性体验，需在地图核验']);
+    if(!Array.isArray(pack.hotels)||!pack.hotels.length)pack.hotels=[];
+    while(pack.hotels.length<3)pack.hotels.push([name+['交通便利住宿','在地特色住宿','自驾友好住宿'][pack.hotels.length],name,'以平台实时价格为准','按主要景点分布选择','预订前核验营业与交通']);
+    return pack;
+  }
+  function currentSettings(){
+    const pack=normalizedPack(),allowed=pack.spots.filter((_,index)=>S.spots[index]!=='no'),wanted=pack.spots.filter((_,index)=>S.spots[index]==='want');
+    const options=allowed.length?allowed:pack.spots.slice(0,3);
+    return {d:pack,name:$('#city').value.trim()||'杭州',days:calc(),wants:wanted.length?wanted:options.slice(0,3),opts:options,precise:$('[data-group="precision"] .on')?.textContent.includes('精确')||false,wake:$('#wake').value,sleep:$('#sleep').value,budget:$('#budget').value,people:Math.max(1,+$('#people').value||1),comp:$('#comp').value,origin:$('#origin').value.trim()||'出发地',ret:$('#return').value.trim()||$('#origin').value.trim()||'返程地',transport:[...document.querySelectorAll('[data-group="transport"] .on')].map(x=>x.textContent).join('、')||'公共交通',prefs:S.prefs.slice(0,3),foods:regionFoods($('#city').value)};
+  }
+  function costs(s,variant,dayIndex){
+    const base={经济型:{hotel:220,food:100,local:45},舒适型:{hotel:420,food:180,local:85},品质型:{hotel:720,food:300,local:150},高端型:{hotel:1300,food:520,local:280}}[s.budget]||{hotel:420,food:180,local:85};
+    const ticket=variant===1?180:variant===2?80:130,intercity=dayIndex===0?Math.round(({经济型:260,舒适型:480,品质型:760,高端型:1200}[s.budget]||480)):0;
+    return {transport:base.local+intercity,hotel:base.hotel,food:base.food,ticket,total:base.local+intercity+base.hotel+base.food+ticket};
+  }
+  function buildDay(s,index,variant){
+    const first=s.wants[(index+variant)%s.wants.length]||s.opts[0],second=s.opts[(index+variant+1)%s.opts.length]||first,food=s.foods[index%s.foods.length],cost=costs(s,variant,index);
+    const rows=[['上午',first[0]+'：'+first[4]+'（'+first[2]+'）'],['中午',food+'；预留 60–90 分钟'],['下午',second[0]+'：'+second[4]+'（'+second[2]+'）'],['晚上',s.foods[(index+1)%s.foods.length]+'，随后返回住宿区域']];
+    if(index===0)rows.unshift(['抵达','从'+s.origin+'前往'+s.name+'，优先采用'+s.transport+'；跨城交通约 ¥'+Math.max(0,cost.transport-({经济型:45,舒适型:85,品质型:150,高端型:280}[s.budget]||85))]);
+    if(index===s.days-1)rows.push(['返程','前往'+s.ret+'，提前核对车次 / 航班并预留进站时间']);
+    return {a:first,b:second,t:rows,food,cost};
+  }
+  function loadDestination(){
+    const pack=normalizedPack();S.spots={};
+    $('#cityIntro').textContent=pack.intro+' 当前数据包已标准化，可生成三种以上路线。';
+    $('#styleHost').innerHTML=[['旅行节奏',['特种兵高密度','均衡探索','轻松慢游','自由留白']],['体验主题',pack.themes],['餐饮与住宿',['本地小吃','特色正餐','咖啡馆','交通方便','安静舒适','设计感']]].map((group,index)=>'<article class="card"><h3>'+group[0]+'</h3><div class="choices multi">'+group[1].map((item,itemIndex)=>'<button class="chip '+(!itemIndex?'on':'')+'">'+safeText(item)+'</button>').join('')+'</div>'+(index===1?'<div class="subchoices tiny muted">未接入实时 API 的地点会明确标注“需核验”，不会伪装成实时数据。</div>':'')+'</article>').join('');
+    $('#spotTitle').textContent=$('#city').value+' · 可选景点与体验';
+    $('#spotHost').innerHTML=pack.spots.map((spot,index)=>'<article class="spot"><img src="'+pics[index%pics.length]+'" alt="'+safeText(spot[0])+'"><div><b>'+safeText(spot[0])+'</b><small>'+safeText(spot[4])+' · '+safeText(spot[1])+'</small><small>'+safeText(spot[2])+'｜建议 '+safeText(spot[3])+'</small><div class="states"><button class="state '+(index<3?'on':'')+'" data-i="'+index+'" data-s="want">想去</button><button class="state '+(index>=3?'on':'')+'" data-i="'+index+'" data-s="maybe">可选</button><button class="state" data-i="'+index+'" data-s="no">不想去</button></div></div></article>').join('');
+    pack.spots.forEach((_,index)=>S.spots[index]=index<3?'want':'maybe');
+    document.querySelectorAll('.state').forEach(button=>button.onclick=()=>{const index=button.dataset.i;S.spots[index]=button.dataset.s;document.querySelectorAll('[data-i="'+index+'"]').forEach(item=>item.classList.toggle('on',item===button))});
+    bindChips();$('#dynamic').classList.remove('hidden');$('#results').classList.add('hidden');$('#final').classList.add('hidden');
+  }
+  function generatePlans(){
+    const s=currentSettings(),names=['平衡探索','主题深度','松弛应变'];
+    S.plans=names.map((name,variant)=>{const decision=principleDecision(S.prefs,variant);return {name:s.name+' · '+name+'路线',score:94-variant*5,v:variant,desc:s.days+' 天 · '+decision.summary,decision,days:Array.from({length:s.days},(_,index)=>buildDay(s,index,variant))}});
+    S.selected=0;renderRoutes();$('#results').classList.remove('hidden');$('#final').classList.add('hidden');$('#results').scrollIntoView({behavior:'smooth'});toast('已生成 3 条可选择路线');
+  }
+  function renderRoutes(){
+    const s=currentSettings();$('#routeHost').innerHTML=S.plans.map((plan,index)=>{
+      const totals=plan.days.reduce((sum,day)=>sum+day.cost.total,0)*s.people;
+      return '<article class="card route '+(index===S.selected?'selected':'')+'" data-r="'+index+'"><div class="routeTop"><div><h3>'+safeText(plan.name)+'</h3><p class="muted tiny">'+safeText(plan.desc)+'</p><span class="tag">'+['均衡串联','核心主题优先','低密度有备用'][index]+'</span><span class="tag">预计 ¥'+totals+'</span></div><b class="score">'+plan.score+'%</b></div><div class="detail"><section class="principle-proof"><b>路线取舍依据</b>'+plan.decision.lines+'</section><div class="route-overview"><span>交通：'+safeText(s.transport)+'</span><span>住宿：'+safeText(s.budget)+'</span><span>景点：每日 2 个核心</span><span>餐饮：每日 2–3 餐</span><span>总价：约 ¥'+totals+'</span></div>'+plan.days.map((day,dayIndex)=>'<div class="day"><b>第 '+(dayIndex+1)+' 天</b>：'+safeText(day.a[0])+' → '+safeText(day.b[0])+'<div class="muted tiny">餐饮：'+safeText(day.food)+'｜当日约 ¥'+(day.cost.total*s.people)+'</div>'+hotel(s,dayIndex)+'</div>').join('')+'<div class="route-actions"><button class="smallbtn fav">收藏</button><button class="primary choose" data-c="'+index+'">选择此方案并生成详细攻略</button></div></div></article>';
+    }).join('');
+    document.querySelectorAll('[data-r]').forEach(card=>card.onclick=event=>{if(event.target.tagName==='BUTTON')return;S.selected=+card.dataset.r;renderRoutes()});
+    document.querySelectorAll('.choose').forEach(button=>button.onclick=()=>{S.selected=+button.dataset.c;renderFinal();toast('详细攻略已生成')});
+    document.querySelectorAll('.fav').forEach(button=>button.onclick=()=>{button.textContent='已收藏';toast('方案已收藏')});
+  }
+  function renderFinal(){
+    const s=currentSettings(),plan=S.plans[S.selected];if(!plan)return toast('请先生成并选择一条路线');
+    const totals=plan.days.reduce((sum,day)=>({transport:sum.transport+day.cost.transport,hotel:sum.hotel+day.cost.hotel,food:sum.food+day.cost.food,ticket:sum.ticket+day.cost.ticket,total:sum.total+day.cost.total}),{transport:0,hotel:0,food:0,ticket:0,total:0});
+    $('#finalSummary').innerHTML='<h3>'+safeText(plan.name)+'</h3><p class="muted">'+safeText(plan.desc)+'</p><div class="plan-total"><span class="tag">'+s.people+' 人总预算约 ¥'+(totals.total*s.people)+'</span><span class="tag">人均约 ¥'+totals.total+'</span><span class="tag">价格为规划估算</span></div><div class="cost-ledger"><span><b>交通</b>¥'+(totals.transport*s.people)+'</span><span><b>住宿</b>¥'+(totals.hotel*s.people)+'</span><span><b>餐饮</b>¥'+(totals.food*s.people)+'</span><span><b>景点门票</b>¥'+(totals.ticket*s.people)+'</span><span><b>合计</b>¥'+(totals.total*s.people)+'</span></div>';
+    $('#finalPlan').innerHTML=plan.days.map((day,index)=>'<article class="planDay"><h3>第 '+(index+1)+' 天｜'+safeText(day.a[0])+' + '+safeText(day.b[0])+'</h3>'+day.t.map(row=>'<div class="act"><b>'+safeText(row[0])+'</b><span>'+safeText(row[1])+'</span></div>').join('')+'<div class="food-plan"><b>餐饮安排：</b>'+safeText(day.food)+'；晚餐 '+safeText(s.foods[(index+1)%s.foods.length])+'。餐饮预算约 ¥'+(day.cost.food*s.people)+'。</div>'+hotel(s,index)+'<div class="cost-ledger"><span><b>交通</b>¥'+(day.cost.transport*s.people)+'</span><span><b>住宿</b>¥'+(day.cost.hotel*s.people)+'</span><span><b>餐饮</b>¥'+(day.cost.food*s.people)+'</span><span><b>景点</b>¥'+(day.cost.ticket*s.people)+'</span><span><b>当日合计</b>¥'+(day.cost.total*s.people)+'</span></div><p class="source-warning">路线、营业时间和价格为规划估算；出发前请通过官方文旅、酒店平台及高德 / 百度地图复核。</p></article>').join('');
+    $('#risk').innerHTML='<b>注意事项：</b>'+safeText(s.d.risk);$('#backup').innerHTML='<b>应变备用：</b>'+safeText(s.d.backup);$('#final').classList.remove('hidden');$('#final').scrollIntoView({behavior:'smooth'});
+  }
+  load=loadDestination;settings=currentSettings;generate=generatePlans;routes=renderRoutes;finalPlan=renderFinal;
+  $('#confirmTrip').onclick=()=>{calc();loadDestination();toast('已加载 '+$('#city').value+' 的规划数据')};
+  $('#generate').onclick=generatePlans;
+})();
 </script></body></html>
