@@ -10,7 +10,7 @@
 <section class="section hidden" id="dynamic"><div class="head"><div><div class="eyebrow">03 / STYLE & RHYTHM</div><h2>本次旅行风格与作息</h2></div><p class="muted tiny" id="cityIntro"></p></div><div class="grid styles" id="styleHost"></div><div class="card grid routine" style="margin-top:13px"><div><h3>作息边界</h3><div class="grid" style="grid-template-columns:1fr 1fr"><div><label>通常起床（24h）</label><input id="wake" type="time" value="08:30"></div><div><label>通常入睡（24h）</label><input id="sleep" type="time" value="23:30"></div></div><label style="margin-top:10px">行程呈现</label><div class="choices single" data-group="precision"><button class="chip on">上午 / 下午 / 晚上</button><button class="chip">精确到具体时刻</button></div><p class="muted tiny">支持跨日：如 12:00 起床、03:00 入睡。</p></div><div><h3 id="spotTitle">必打卡项目</h3><div class="spots" id="spotHost"></div></div></div><div class="update"><span>“想去”优先安排；“不想去”绝不会出现在路线中。</span><button class="primary" id="generate">确认选择、更新规划</button></div></section>
 <section class="section hidden" id="results"><div class="head"><div><div class="eyebrow">04 / AI OPTIONS</div><h2>基于当前选择的路线方案</h2></div><p class="muted tiny">可评分、收藏、排序并选择方案。</p></div><div id="routeHost" class="grid"></div></section>
 <section class="section hidden" id="final"><div class="head"><div><div class="eyebrow">05 / EXECUTABLE PLAN</div><h2>最终旅行计划</h2></div><button class="smallbtn" id="back">返回修改</button></div><div class="card"><div id="finalSummary"></div><div id="finalPlan"></div><div class="grid finalgrid"><div class="notice" id="risk"></div><div class="notice" style="background:#eaf4fa" id="backup"></div></div></div></section>
-<section class="section grid footer"><article class="card"><div class="eyebrow">出发确认清单</div><p>✓ 证件、门票预约和交通确认</p><p>✓ 酒店确认、天气与衣物</p><p>✓ 充电设备、保险与常用药品</p></article><article class="card"><div class="eyebrow">示例数据与隐私</div><p class="muted tiny">景点、酒店、交通和价格均为演示估算，实际出行前请通过官方渠道或旅行平台确认。用户偏好仅用于生成个性化方案。</p></article></section></main><div class="toast" id="toast"></div>
+<section class="section grid footer"><article class="card"><div class="eyebrow">出发确认清单</div><p>✓ 证件、门票预约和交通确认</p><p>✓ 酒店确认、天气与衣物</p><p>✓ 充电设备、保险与常用药品</p></article><article class="card"><div class="eyebrow">数据与隐私</div><p class="muted tiny">景点、酒店、交通和价格均为演示估算，实际出行前请通过官方渠道或旅行平台确认。省、市、县选择数据采用公开行政区划资料；用户偏好仅用于生成个性化方案。</p></article></section></main><div class="toast" id="toast"></div>
 <script>
 const pics=['https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=180&q=70','https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=180&q=70','https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=180&q=70'];
 const C={
@@ -635,6 +635,10 @@ const gate = document.createElement('section');
 gate.className = 'auth-gate';
 gate.innerHTML = '<div class="auth-card"><div class="eyebrow">TRUSTED TRIP / YOUR SPACE</div><h1>开始你的旅行档案</h1><p class="muted">注册后，偏好和规划历史只会保存到你的个人账户。</p><div class="auth-tabs"><button class="active" data-auth-mode="login">登录</button><button data-auth-mode="register">注册</button></div><form id="accountForm"><label>用户名</label><input id="accountUsername" required minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" autocomplete="username" placeholder="3–24 位字母、数字或下划线"><p class="tiny muted">用户名是账户唯一标识，注册后不可修改。</p><label>密码</label><input id="accountPassword" type="password" required minlength="8" autocomplete="current-password" placeholder="至少 8 位"><div id="confirmWrap" class="hidden"><label>确认密码</label><input id="accountConfirm" type="password" autocomplete="new-password" placeholder="再次输入密码"></div><button class="primary" id="accountSubmit" type="submit">登录并进入</button><p class="tiny muted" id="accountStatus" role="alert"></p></form></div>';
 document.body.prepend(gate);
+// 仅供本机响应式验收；线上域名无法绕过登录。
+if(['localhost','127.0.0.1'].includes(location.hostname)&&new URLSearchParams(location.search).has('preview')){
+  gate.remove();document.body.classList.add('account-ready');
+}
 const accountForm = document.querySelector('#accountForm');
 const accountStatus = document.querySelector('#accountStatus');
 let authMode = 'login';
@@ -880,18 +884,38 @@ const domesticCityDirectory={
   '丽江':{themes:['古城夜游','雪山','纳西文化','咖啡'],spots:['丽江古城','玉龙雪山','束河古镇','黑龙潭','白沙古镇','蓝月谷']},
   '贵阳':{themes:['避暑','苗侗文化','酸汤美食','山地'],spots:['青岩古镇','黔灵山公园','贵州省博物馆','甲秀楼','花溪公园','青云市集']},
   '南宁':{themes:['绿城慢游','壮族文化','夜市','东盟风情'],spots:['青秀山','广西民族博物馆','三街两巷','南湖公园','亭子码头','建政路夜市']},
-  '北海':{themes:['银滩日落','海岛','骑楼','海鲜'],spots:['北海银滩','涠洲岛','北海老街','侨港风情街','冠头岭','北部湾广场']}
+  '北海':{themes:['银滩日落','海岛','骑楼','海鲜'],spots:['北海银滩','涠洲岛','北海老街','侨港风情街','冠头岭','北部湾广场']},
+  '阿坝藏族羌族自治州':{themes:['雪山冰川','藏羌文化','高原湖泊','自然保护区'],spots:['九寨沟风景名胜区','黄龙风景名胜区','四姑娘山景区','达古冰川景区','毕棚沟景区','若尔盖黄河九曲第一湾']},
+  '阿坝州':{themes:['雪山冰川','藏羌文化','高原湖泊','自然保护区'],spots:['九寨沟风景名胜区','黄龙风景名胜区','四姑娘山景区','达古冰川景区','毕棚沟景区','若尔盖黄河九曲第一湾']},
+  '普洱市':{themes:['古茶山','雨林生态','拉祜佤族文化','咖啡庄园'],spots:['景迈山古茶林文化景观','中华普洱茶博览苑','太阳河森林公园','翁基布朗族老寨','那柯里茶马驿站','小凹子咖啡庄园']},
+  '普洱':{themes:['古茶山','雨林生态','拉祜佤族文化','咖啡庄园'],spots:['景迈山古茶林文化景观','中华普洱茶博览苑','太阳河森林公园','翁基布朗族老寨','那柯里茶马驿站','小凹子咖啡庄园']}
 };
 function makeCityPack(name){
-  const preset=domesticCityDirectory[name]||{themes:['城市漫步','本地风味','地标摄影','文化展馆','公园休闲','夜间体验'],spots:[name+'博物馆',name+'历史文化街区',name+'城市地标',name+'人民公园',name+'本地早市',name+'夜间步行街']};
-  return {intro:name+' 的独立旅行数据包已生成：优先按本地文化、交通与作息组织，建议出发前再核验开放和预约信息。',themes:preset.themes,risk:'热门场馆、节假日交通和天气变化需要在出行前确认；涉及门票的项目建议提前预约。',backup:'遇到降雨、闭馆或排队时，切换到 '+name+'博物馆、当地艺术空间或室内餐饮街区。',spots:preset.spots.map((spot,i)=>[spot,name+'核心区域',i%3===0?'免费':'¥30–120',['上午','下午','傍晚','晚上'][i%4],spot+' 的城市特色体验']),hotels:[[''+name+'中心交通便利酒店',name+'中心区','¥380–580','方便串联首日和次日行程','交通便利 / 性价比'],[''+name+'安静设计酒店',name+'文化街区','¥520–780','适合慢游、餐饮与夜间步行','安静 / 设计感'],[''+name+'自驾友好酒店',name+'交通枢纽','¥360–620','停车和进出城更方便','停车方便 / 家庭友好']]};
+  const shortName=name.replace(/(特别行政区|壮族自治区|回族自治区|维吾尔自治区|自治区|自治州|地区|盟|市|县|区)$/,'');
+  const preset=domesticCityDirectory[name]||domesticCityDirectory[shortName];
+  if(!preset){
+    return {intro:name+' 暂无经过人工核验的精选景点包。为避免用“博物馆、早市、夜市”模板冒充当地推荐，本次只提供地图核验入口。',themes:['自然风貌','在地文化','特色餐饮','周边探索'],risk:'当前地点需要通过官方文旅渠道和地图平台核验开放时间、交通与预约规则。',backup:'遇到天气、闭园或交通变化时，请优先查看当地文旅部门公告和地图实时信息。',spots:[[name+'官方文旅推荐',name,'以官方信息为准','出发前核验','打开地图检索当地景区与近期开放信息']],hotels:[[name+'住宿待核验',name,'以平台实时价格为准','按已选景点分布选择住宿','请在地图或正规旅行平台核验']]};
+  }
+  return {intro:name+' 的精选旅行数据包已加载；景点基于目的地特征组织，开放与交通信息请在出发前通过地图和官方渠道复核。',themes:preset.themes,risk:'高海拔、天气、节假日交通和景区预约规则因地而异，请按目的地逐项确认。',backup:'遇到天气、闭园或道路变化时，优先切换同区域低风险项目，并查看当地文旅部门公告。',spots:preset.spots.map((spot,i)=>[spot,name+'及周边',i%3===0?'以官方为准':'¥30–160',['上午','下午','傍晚','全天'][i%4],spot+' 的代表性在地体验']),hotels:[[name+'交通便利住宿',name+'中心区域','以实时价格为准','方便串联主要景点','需在地图平台核验'],[name+'在地特色住宿',name+'景区周边','以实时价格为准','适合深度体验','需核验营业状态'],[name+'自驾友好住宿',name+'交通节点','以实时价格为准','减少长距离折返','需核验停车条件']]};
 }
 const oldCitySelect=document.querySelector('#city');
 if(oldCitySelect){
-  const cityInput=document.createElement('input');cityInput.id='city';cityInput.value=oldCitySelect.value;cityInput.setAttribute('list','domesticCities');cityInput.placeholder='输入任意国内城市或选择示例';oldCitySelect.replaceWith(cityInput);
-  const list=document.createElement('datalist');list.id='domesticCities';[...new Set([...Object.keys(C),...Object.keys(domesticCityDirectory)])].sort().forEach(name=>list.insertAdjacentHTML('beforeend','<option value="'+name+'">'));document.body.append(list);
+  const picker=document.createElement('div');picker.className='region-picker';picker.innerHTML='<select id="province" aria-label="省级行政区"><option>加载省份中…</option></select><select id="prefecture" aria-label="市、州或地区"><option>加载城市中…</option></select><select id="county" aria-label="区、县或县级市"><option value="">全市 / 全州</option></select><input id="city" type="hidden" value="杭州"><p class="city-hint tiny muted" id="regionStatus">正在加载全国省、市、县三级行政区划…</p>';
+  oldCitySelect.replaceWith(picker);
+  const province=picker.querySelector('#province'),prefecture=picker.querySelector('#prefecture'),county=picker.querySelector('#county'),cityInput=picker.querySelector('#city'),status=picker.querySelector('#regionStatus');
+  const fill=(select,items,first)=>{select.innerHTML='<option value="">'+first+'</option>'+items.map(item=>'<option value="'+item+'">'+item+'</option>').join('')};
+  const syncDestination=()=>{cityInput.value=county.value||prefecture.value||province.value||'杭州';status.textContent='当前目的地：'+cityInput.value+'（可继续选择到区 / 县，也可停留在市 / 州级）'};
+  fetch('./pca.json').then(response=>{if(!response.ok)throw new Error('行政区划数据加载失败');return response.json()}).then(data=>{
+    data['香港特别行政区']||={'香港特别行政区':['中西区','湾仔区','东区','南区','油尖旺区','深水埗区','九龙城区','黄大仙区','观塘区','荃湾区','屯门区','元朗区','北区','大埔区','西贡区','沙田区','葵青区','离岛区']};
+    data['澳门特别行政区']||={'澳门特别行政区':['花地玛堂区','圣安多尼堂区','大堂区','望德堂区','风顺堂区','嘉模堂区','路凼填海区','圣方济各堂区']};
+    data['台湾省']||={'台北市':['中正区','大同区','中山区','松山区','大安区','万华区','信义区','士林区','北投区','内湖区','南港区','文山区'],'新北市':['板桥区','三重区','中和区','永和区','新庄区','新店区','土城区','芦洲区','汐止区','淡水区','其他区'],'桃园市':['桃园区','中坜区','平镇区','八德区','杨梅区','芦竹区','其他区'],'台中市':['中区','东区','南区','西区','北区','西屯区','南屯区','北屯区','其他区'],'台南市':['中西区','东区','南区','北区','安平区','安南区','其他区'],'高雄市':['新兴区','前金区','苓雅区','盐埕区','鼓山区','旗津区','前镇区','三民区','左营区','楠梓区','小港区','其他区'],'基隆市':['仁爱区','信义区','中正区','中山区','安乐区','暖暖区','七堵区'],'新竹市':['东区','北区','香山区'],'嘉义市':['东区','西区'],'新竹县':['竹北市','竹东镇','新埔镇','关西镇','其他乡镇'],'苗栗县':['苗栗市','头份市','竹南镇','后龙镇','其他乡镇'],'彰化县':['彰化市','员林市','鹿港镇','溪湖镇','其他乡镇'],'南投县':['南投市','埔里镇','草屯镇','竹山镇','其他乡镇'],'云林县':['斗六市','斗南镇','虎尾镇','西螺镇','其他乡镇'],'嘉义县':['太保市','朴子市','民雄乡','阿里山乡','其他乡镇'],'屏东县':['屏东市','潮州镇','东港镇','恒春镇','其他乡镇'],'宜兰县':['宜兰市','罗东镇','苏澳镇','头城镇','其他乡镇'],'花莲县':['花莲市','凤林镇','玉里镇','新城乡','其他乡镇'],'台东县':['台东市','成功镇','关山镇','卑南乡','其他乡镇'],'澎湖县':['马公市','湖西乡','白沙乡','西屿乡','望安乡','七美乡'],'金门县':['金城镇','金湖镇','金沙镇','金宁乡','烈屿乡','乌坵乡'],'连江县':['南竿乡','北竿乡','莒光乡','东引乡']};
+    fill(province,Object.keys(data),'请选择省 / 自治区 / 直辖市');province.value='浙江省';
+    const updateCities=()=>{fill(prefecture,Object.keys(data[province.value]||{}),'请选择市 / 州 / 地区');if(province.value==='浙江省')prefecture.value='杭州市';updateCounties()};
+    const updateCounties=()=>{fill(county,(data[province.value]||{})[prefecture.value]||[],'全市 / 全州');syncDestination()};
+    province.onchange=updateCities;prefecture.onchange=updateCounties;county.onchange=syncDestination;updateCities();
+  }).catch(()=>{province.innerHTML='<option value="浙江省">浙江省</option>';prefecture.innerHTML='<option value="杭州">杭州市</option>';county.innerHTML='<option value="">全市 / 全州</option>';status.textContent='行政区划暂时无法加载，请刷新页面重试。';syncDestination()});
 }
-c=function(){const name=$('#city').value.trim()||'杭州';if(!C[name])C[name]=makeCityPack(name);return C[name]};
+c=function(){const name=$('#city').value.trim()||'杭州';const shortName=name.replace(/(特别行政区|壮族自治区|回族自治区|维吾尔自治区|自治区|自治州|州|地区|盟|市|县|区)$/,'');if(!C[name])C[name]=C[shortName]||makeCityPack(name);return C[name]};
 
 /* 原则不是展示文案：它会改变方案的取舍解释、路线排序和每日节奏。 */
 function principleDecision(prefs,variant){
@@ -934,5 +958,25 @@ routes=function(){
   nav.querySelectorAll('button').forEach(button=>button.onclick=()=>{nav.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));main.querySelectorAll('.app-view').forEach(view=>view.classList.toggle('active',view.id===button.dataset.view));syncArchive();window.scrollTo({top:0,behavior:'smooth'})});
   // 档案页在用户点击入口时刷新；不监听整个页面，避免自身渲染再次触发监听造成循环卡顿。
   syncArchive();
+})();
+</script><style>
+/* 深绿标题是品牌锚点；三级行政区选择器在小屏自动纵向排列。 */
+.hero h1{color:#063f32;background:linear-gradient(112deg,#052f27 0%,#075841 48%,#0b7451 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 10px 30px rgba(5,63,50,.10)}
+.region-picker{display:grid;gap:7px}.region-picker select{min-width:0}.map-verify{display:inline-flex;align-items:center;gap:4px;margin-top:5px;color:#086a51;font-size:11px;font-weight:800;text-decoration:none}.map-verify:hover{text-decoration:underline}.map-verify:focus-visible{outline:3px solid #b9dfcf;outline-offset:2px;border-radius:4px}
+.data-note{margin-top:8px;padding:8px 10px;border-left:3px solid #17765d;background:#f0f8f4;border-radius:0 8px 8px 0}
+@media(max-width:780px){.form>div[style*="grid-column"]{grid-column:1/-1}.hero h1{font-size:clamp(40px,13vw,56px)}.region-picker{grid-column:1/-1}}
+@media(max-width:480px){.form{grid-template-columns:1fr}.form>div{grid-column:1/-1}.wrap{padding-inline:10px}.trust,.card{padding:15px}.hero{gap:12px}.spot{grid-template-columns:66px 1fr}.spot img{width:66px;height:82px}}
+</style><script>
+/* 无需密钥的地图核验入口：不宣称已取得实时 API 数据。 */
+(function addMapVerification(){
+  const host=document.querySelector('#spotHost');if(!host)return;
+  new MutationObserver(()=>host.querySelectorAll('.spot').forEach(card=>{
+    if(card.querySelector('.map-verify'))return;const name=card.querySelector('b')?.textContent?.trim();if(!name)return;
+    const link=document.createElement('a');link.className='map-verify';link.target='_blank';link.rel='noopener noreferrer';link.textContent='在高德地图核验地点 ↗';
+    link.href='https://uri.amap.com/search?keyword='+encodeURIComponent(name)+'&city='+encodeURIComponent(document.querySelector('#city')?.value||'')+'&src=travel-assistant';card.querySelector('.states')?.before(link);
+  })).observe(host,{childList:true});
+  const update=document.querySelector('#confirmTrip')?.closest('.update');if(update&&!update.querySelector('.data-note')){
+    const note=document.createElement('span');note.className='data-note tiny';note.textContent='地点推荐分为“内置精选”和“待地图核验”；未接入正式 API 前，不会把模板内容标成实时全网数据。';update.prepend(note);
+  }
 })();
 </script></body></html>
