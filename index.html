@@ -672,7 +672,7 @@ function showApp(user){
   loadPlanHistory();
 }
 
-accountForm.addEventListener('submit',async(event)=>{
+accountForm?.addEventListener('submit',async(event)=>{
   event.preventDefault();
   const username=document.querySelector('#accountUsername').value.trim();
   const password=document.querySelector('#accountPassword').value;
@@ -944,6 +944,9 @@ routes=function(){
   document.querySelectorAll('.choose').forEach(button=>button.onclick=()=>{S.selected=+button.dataset.c;finalPlan();toast('已选用方案，并生成最终可执行计划')});
   document.querySelectorAll('.fav').forEach(button=>button.onclick=()=>{button.textContent='已收藏';toast('方案已收藏')});
 };
+// 初始脚本曾把按钮绑定到旧版 generate 函数；新版函数定义完成后必须重新绑定，
+// 否则旧数据结构会传给新版 routes 渲染器并在点击时中断。
+document.querySelector('#generate').onclick=generate;
 
 /* 三个 App 入口。规划页保留原有完整流程，档案页复用账户专属的历史记录。 */
 (function buildAppShell(){
