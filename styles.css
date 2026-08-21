@@ -75,3 +75,9 @@ body.flow-mode .hero{min-height:calc(100vh - 142px)}body.flow-mode #discover,bod
   body.flow-mode[data-flow-step="6"] #finalPlan{display:grid!important;grid-template-rows:auto auto auto minmax(0,1fr) auto;gap:8px}.final-head{align-items:center}.revision-note{margin:0}.budget-strip{margin:0}.day-list{grid-auto-flow:column;grid-auto-columns:min(520px,72vw);grid-template-columns:none;overflow-x:auto;overflow-y:hidden;padding:2px 2px 10px;scroll-snap-type:x proximity}.day-card{scroll-snap-align:start;grid-template-columns:72px 1fr;gap:12px;padding:16px}.day-card h3{font-size:20px}.timeline{gap:5px}.timeline-row{padding-bottom:5px}.day-meta{margin-top:7px}.reality-check{margin-top:0;padding:14px 18px}
   body.flow-mode[data-flow-step="7"] #saved{display:grid!important;grid-template-rows:auto minmax(0,1fr)}body.flow-mode #savedTrips{overflow:auto}
 }
+
+/* Balanced hero choices: two clear paths, equal visual weight. */
+.hero-actions{align-items:start}.hero-choice{display:grid;grid-template-rows:auto 1fr;gap:9px;width:min(255px,48%)}.hero-choice .primary{width:100%;min-height:48px;white-space:nowrap}.hero-choice small{color:#f1dfbd;font-size:10px;line-height:1.45}.hero .hero-secondary{background:rgba(18,60,52,.82)}.hero .hero-secondary:hover{background:#08766b}
+@media(min-width:951px){body.flow-mode .hero-copy{padding-bottom:8px}body.flow-mode .hero-lead{margin:16px 0}.hero-actions{gap:14px}.trust-row{margin-top:20px}}
+@media(max-width:620px){.hero-choice{width:100%}.hero-choice .primary{width:100%}}
+@media(min-width:951px){body.flow-mode .hero h1{font-size:clamp(52px,min(5vw,8vh),76px);line-height:.92}}

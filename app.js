@@ -72,7 +72,7 @@ function showFlowStep(step){
 $$('.journey-axis button').forEach(button=>button.addEventListener('click',()=>showFlowStep(+button.dataset.flowStep)));
 $$('[data-go-step]').forEach(button=>button.addEventListener('click',()=>showFlowStep(+button.dataset.goStep)));
 $('.hero-actions .primary').addEventListener('click',event=>{event.preventDefault();unlockFlow(1);showFlowStep(1)});
-$('.hero-actions .text-link').addEventListener('click',event=>{event.preventDefault();unlockFlow(2);showFlowStep(2)});
+$('.hero-actions .hero-secondary').addEventListener('click',event=>{event.preventDefault();unlockFlow(2);showFlowStep(2)});
 $('.site-header nav a[href="#discover"]').addEventListener('click',event=>{event.preventDefault();unlockFlow(1);showFlowStep(1)});
 $('.site-header nav a[href="#planner"]').addEventListener('click',event=>{event.preventDefault();unlockFlow(2);showFlowStep(2)});
 $('.site-header nav a[href="#saved"]').addEventListener('click',event=>{event.preventDefault();showFlowStep(7)});
