@@ -61,6 +61,34 @@ async function initDivisions(){
 $('#province').addEventListener('change',updateCities);$('#prefecture').addEventListener('change',updateCounties);$('#county').addEventListener('change',updateDestination);
 $$('.step').forEach(button=>button.addEventListener('click',()=>{$$('.step').forEach(item=>item.classList.toggle('active',item===button));$('#'+button.dataset.stepTarget).scrollIntoView({behavior:'smooth',block:'center'})}));
 
+const worldOrigins=[
+  'New York, United States','Los Angeles, United States','San Francisco, United States','Chicago, United States','Seattle, United States','Boston, United States','Washington, D.C., United States','Honolulu, United States','Toronto, Canada','Vancouver, Canada','Montreal, Canada','Mexico City, Mexico','São Paulo, Brazil','Rio de Janeiro, Brazil','Buenos Aires, Argentina','Santiago, Chile','Lima, Peru',
+  'London, United Kingdom','Paris, France','Amsterdam, Netherlands','Brussels, Belgium','Berlin, Germany','Frankfurt, Germany','Munich, Germany','Madrid, Spain','Barcelona, Spain','Lisbon, Portugal','Rome, Italy','Milan, Italy','Zurich, Switzerland','Vienna, Austria','Prague, Czechia','Warsaw, Poland','Copenhagen, Denmark','Stockholm, Sweden','Oslo, Norway','Helsinki, Finland','Dublin, Ireland','Athens, Greece','Istanbul, Türkiye','Moscow, Russia',
+  'Tokyo, Japan','Osaka, Japan','Seoul, South Korea','Singapore','Bangkok, Thailand','Kuala Lumpur, Malaysia','Jakarta, Indonesia','Bali, Indonesia','Manila, Philippines','Hanoi, Vietnam','Ho Chi Minh City, Vietnam','Phnom Penh, Cambodia','Delhi, India','Mumbai, India','Bengaluru, India','Kathmandu, Nepal','Dubai, United Arab Emirates','Doha, Qatar','Tel Aviv, Israel','Riyadh, Saudi Arabia',
+  'Sydney, Australia','Melbourne, Australia','Brisbane, Australia','Perth, Australia','Auckland, New Zealand','Cairo, Egypt','Cape Town, South Africa','Johannesburg, South Africa','Nairobi, Kenya','Casablanca, Morocco','Lagos, Nigeria',
+  'Beijing, China','Shanghai, China','Guangzhou, China','Shenzhen, China','Hong Kong, China','Macao, China','Taipei, Taiwan'
+];
+$('#worldOrigins').innerHTML=worldOrigins.map(city=>`<option value="${esc(city)}"></option>`).join('');
+$('#locationHelp').textContent='Only after you click: your browser asks permission, then coordinates are sent once to our location lookup provider to identify the nearest city. We do not save the coordinates. You can always search worldwide instead.';
+$('#locateOrigin').addEventListener('click',()=>{
+  const button=$('#locateOrigin'),status=$('#locationStatus');
+  if(!navigator.geolocation){status.textContent='Location is not supported in this browser. Search for your city instead.';return}
+  button.disabled=true;button.querySelector('span').textContent='Locating…';status.textContent='Your browser will ask for permission.';
+  navigator.geolocation.getCurrentPosition(async position=>{
+    const {latitude,longitude}=position.coords;
+    try{
+      const response=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+      if(!response.ok)throw new Error('Location lookup failed');
+      const place=await response.json(),city=place.city||place.locality||place.principalSubdivision||'Current location',country=place.countryName||'';
+      $('#origin').value=[city,country].filter(Boolean).join(', ');status.textContent=`Located near ${$('#origin').value}. You can edit this before planning.`;toast('Starting point added from your location.')
+    }catch(error){status.textContent='We found your position but could not identify the city. Search for a nearby city instead.'}
+    button.disabled=false;button.querySelector('span').textContent='Use my location';
+  },error=>{
+    status.textContent=error.code===1?'Location permission was not granted. Search for your city instead.':'We could not determine your location. Search for your city instead.';
+    button.disabled=false;button.querySelector('span').textContent='Use my location';
+  },{enableHighAccuracy:false,timeout:12000,maximumAge:300000});
+});
+
 function tripInput(){const start=new Date($('#startDate').value),end=new Date($('#endDate').value);const days=Math.max(1,Math.round((end-start)/86400000)+1);const destination=$('#destination').value;return{destination,days,travelers:Math.max(1,+$('#travelers').value||1),budget:$('#budget').value,transport:$('#transport').value,origin:$('#origin').value.trim()||'your arrival point',interests:$$('#interestChips input:checked').map(input=>input.value),notes:$('#notes').value.trim(),profile:getProfile(destination)}}
 function costModel(input,style,index){const tiers={value:{stay:280,food:120,local:55},comfort:{stay:520,food:220,local:110},premium:{stay:1100,food:420,local:240}};const base=tiers[input.budget],tickets=style==='Deep Dive'?220:style==='Slow China'?90:150,arrival=index===0?(input.transport.includes('rail')?420:input.transport.includes('Flight')?900:520):0;return{transport:base.local+arrival,stay:base.stay,food:base.food,sights:tickets,total:base.local+arrival+base.stay+base.food+tickets}}
 function buildDay(input,index,variant){const profile=input.profile,shift=variant==='Deep Dive'?1:variant==='Slow China'?2:0,a=profile.sights[(index+shift)%profile.sights.length],b=profile.sights[(index+shift+1)%profile.sights.length],food=profile.foods[index%profile.foods.length],cost=costModel(input,variant,index);const timeline=[];if(index===0)timeline.push(['Arrival',`Travel from ${input.origin} to ${input.destination}. Allow extra time for passport checks, station security and finding the correct exit.`]);timeline.push(['Morning',`${a}. Start before the main crowds and keep the Chinese name ready for tickets and map searches.`],['Lunch',`${food}. Ask the hotel to write the restaurant name in Chinese if needed.`],['Afternoon',`${b}. Keep 30–45 minutes of buffer for transfers and entrance checks.`],['Evening',`${profile.foods[(index+1)%profile.foods.length]}, followed by an easy return to ${profile.stay}.`]);if(index===input.days-1)timeline.push(['Departure','Confirm the station or airport terminal in Chinese and arrive early.']);return{a,b,food,cost,timeline}}
