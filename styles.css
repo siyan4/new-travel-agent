@@ -81,3 +81,7 @@ body.flow-mode .hero{min-height:calc(100vh - 142px)}body.flow-mode #discover,bod
 @media(min-width:951px){body.flow-mode .hero-copy{padding-bottom:8px}body.flow-mode .hero-lead{margin:16px 0}.hero-actions{gap:14px}.trust-row{margin-top:20px}}
 @media(max-width:620px){.hero-choice{width:100%}.hero-choice .primary{width:100%}}
 @media(min-width:951px){body.flow-mode .hero h1{font-size:clamp(52px,min(5vw,8vh),76px);line-height:.92}}
+
+/* Quiet discovery canvas: no background labels, with a clear route to all destinations. */
+.discover-guidance{display:grid;justify-items:start;gap:9px;max-width:430px}.discover-guidance p{margin:0;color:#a9c1b8}.discover-skip{padding:0;border:0;background:none;color:#f1cd75;font-size:11px;font-weight:900;text-decoration:underline;text-underline-offset:4px}.discover-skip:hover{color:#fff1bd}.discover .map-watermark,.discover .region-label{display:none!important}.discover .city-stage:after{content:none!important}.discover .city-stage{background:radial-gradient(circle at 28% 38%,rgba(235,182,79,.14),transparent 35%),repeating-radial-gradient(circle at 18% 30%,rgba(255,221,151,.055) 0 1px,transparent 1px 5px),linear-gradient(135deg,#9e1f18,#681713 65%,#351412)!important}
+@media(max-width:620px){.discover-guidance{max-width:none}.discover-skip{font-size:10px}}
